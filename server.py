@@ -23,11 +23,16 @@ def client(connect, addr):
             data = connect.recv(4096)
             if data == b'':
                 clients.remove(connect)
-                break
+                connect.close()
             print('[MESSAGE] ' + addr[0] + ' -> ' + base64.b64decode(data).decode('utf-8'))
             print('Debug: ' + str(data) + ' len: ' + str(len(data)))
             send_message_to_all(addr, data.decode('utf-8'))
-        except: pass
+        except:
+            try:
+                connect.close()
+                clients.remove(connect)
+            except: pass
+
 
 def send_message_to_all(addr, msg):
     try:
