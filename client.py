@@ -1,48 +1,39 @@
-import socket, threading, base64
+import socket, sys, threading, base64
 
-clients = set()
-
-ips, ports = '0.0.0.0', 48000
-
-debug = True
+room_ip = '127.0.0.1'
+room_port = 48000
 
 def main():
-    sock = socket.socket()
-    sock.bind((ips, ports))
-    sock.listen(4096)
-    print('[INFO] OK Listen %s:%s' % (ips, str(ports)))
-    while True:
-        connect, addr = sock.accept()
-        threading.Thread(target=client, args=(connect, addr,)).start()
-        clients.add(connect)
-
-def client(connect, addr):
-    print('[INFO] %s Has been connected' % (addr[0]))
-    while True:
-        try:
-            data = connect.recv(4096)
-            if data == b'':
-                clients.discard(connect)
-                connect.close()
-            print('[MESSAGE] ' + addr[0] + ' -> ' + decode(data))
-            print('Debug: ' + str(data) + ' len: ' + str(len(data)))
-            send_message_to_all(addr, decode(data))
-        except:
-            try:
-                connect.close()
-                clients.discard(connect)
-            except: pass
-
-
-def send_message_to_all(addr, msg):
     try:
-        ip = addr[0].split('.')
-        ip = ip[0] + '.*.*.' + ip[3]
-        for cli in clients:
-            cli.send(encode(ip + ' > ' + msg))
-    except Exception as e:
-        print('[AERROR] ' + e)
-        clients.discard(cli)
+        sock = socket.socket()
+        sock.connect((room_ip, room_port))
+        print('You has bees successfulled connected to a chat room, get kaef')
+        print('Hi, are you in my room to write here anything, all messages are encrypted and nobody can listen')
+    except:
+        print('Sorry, but this room is not working ((')
+    threading.Thread(target=console,      args=(sock,)).start()
+    threading.Thread(target=message_recv, args=(sock,)).start()
+
+def console(sock):
+    while 1:
+        try:
+            mes = input(' > ')
+            sock.send(encode(mes))
+        except:
+            print('P2P server has been offed')
+            sys.exit(0)
+            exit()
+
+def message_recv(sock):
+    while 1:
+        try:
+            msg = sock.recv(4096)
+            if msg == b'': break
+            print(decode(msg))
+        except:
+            print('P2P server has been offed')
+            sys.exit(0)
+            exit()
 
 def encode(message):
     msg = base64.b64encode(bytes(message, 'utf-8')) + b'()' + base64.b64encode(bytes(message, 'utf-8'))
